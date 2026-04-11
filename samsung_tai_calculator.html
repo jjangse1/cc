@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>척 · 츄</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#000; width:100vw; height:100dvh; overflow:hidden; font-family:'Black Han Sans',sans-serif; }
+
+#video {
+position:fixed; top:0; left:0;
+width:100%; height:100%;
+object-fit:cover;
+transform:scaleX(-1);
+opacity:0.85;
+}
+
+#overlay {
+position:fixed; top:0; left:0;
+width:100%; height:100%;
+pointer-events:none;
+}
+
+.word {
+position:absolute;
+left:50%; top:50%;
+transform:translate(-50%,-50%) scale(0.4);
+font-size:clamp(100px,28vw,260px);
+opacity:0;
+pointer-events:none;
+text-shadow: 0 0 40px currentColor, 4px 4px 0 rgba(0,0,0,0.8);
+transition:none;
+}
+.word.pop {
+animation: popAnim 0.9s cubic-bezier(0.175,0.885,0.32,1.275) forwards;
+}
+#word-cheok { color:#00d4ff; }
+#word-chyu  { color:#ff3d7f; }
+
+@keyframes popAnim {
+0%   { opacity:0; transform:translate(-50%,-50%) scale(0.3) rotate(-8deg); filter:blur(10px); }
+50%  { opacity:1; transform:translate(-50%,-50%) scale(1.15) rotate(2deg); filter:blur(0); }
+70%  { transform:translate(-50%,-50%) scale(0.95) rotate(-1deg); }
+85%  { opacity:1; transform:translate(-50%,-50%) scale(1); }
+100% { opacity:0; transform:translate(-50%,-50%) scale(1.4) rotate(4deg); filter:blur(8px); }
+}
+
+#flash {
+position:fixed; inset:0; opacity:0; pointer-events:none;
+mix-blend-mode:screen; transition:opacity 0.05s;
+}
+
+.dot {
+position:fixed; width:14px; height:14px;
+border-radius:50%; top:24px; z-index:100;
+transition: transform 0.1s, opacity 0.1s;
+opacity:0.4;
+}
+#dot-L { left:20px;  background:#00d4ff; box-shadow:0 0 10px #00d4ff; }
+#dot-R { right:20px; background:#ff3d7f; box-shadow:0 0 10px #ff3d7f; }
+.dot.closed { opacity:1; transform:scale(1.8); }
+
+#status {
+position:fixed; bottom:28px; left:50%; transform:translateX(-50%);
+color:rgba(255,255,255,0.35); font-size:12px; letter-spacing:3px;
+font-family:monospace; z-index:100; white-space:nowrap; text-align:center;
+}
+
+#startScreen {
+position:fixed; inset:0; background:rgba(0,0,0,0.94);
+display:flex; flex-direction:column; align-items:center; justify-content:center;
+gap:16px; z-index:200;
+}
+#startScreen h1 {
+font-size:clamp(64px,20vw,120px);
+background:linear-gradient(135deg,#00d4ff,#ff3d7f);
+-webkit-background-clip:text; -webkit-text-fill-color:transparent;
+background-clip:text;
+}
+#startScreen p { color:rgba(255,255,255,0.45); font-size:13px; letter-spacing:4px; font-family:monospace; }
+.hints { display:flex; gap:48px; margin:8px 0; }
+.hint { display:flex; flex-direction:column; align-items:center; gap:6px; }
+.hint .label { color:rgba(255,255,255,0.35); font-size:10px; letter-spacing:3px; font-family:monospace; }
+.hint .kw { font-size:22px; }
+.left-h .kw { color:#00d4ff; }
+.right-h .kw { color:#ff3d7f; }
+#startBtn {
+margin-top:20px; padding:14px 44px;
+border:2px solid rgba(255,255,255,0.25); background:transparent;
+color:#fff; font-size:14px; letter-spacing:4px; font-family:monospace;
+cursor:pointer; border-radius:2px; transition:all 0.2s;
+}
+#startBtn:active { background:rgba(255,255,255,0.08); }
+
+#loadWrap { display:none; flex-direction:column; align-items:center; gap:12px; }
+#loadBar { width:220px; height:2px; background:rgba(255,255,255,0.1); border-radius:2px; overflow:hidden; }
+#loadFill { height:100%; width:0%; background:linear-gradient(90deg,#00d4ff,#ff3d7f); transition:width 0.4s; }
+#loadMsg { color:rgba(255,255,255,0.4); font-size:12px; letter-spacing:3px; font-family:monospace; }
+</style>
+
+</head>
+<body>
+
+<video id="video" autoplay muted playsinline></video>
+
+<div id="flash"></div>
+
+<div id="overlay">
+  <div id="word-cheok" class="word">척</div>
+  <div id="word-chyu"  class="word">츄</div>
+</div>
+
+<div class="dot" id="dot-L"></div>
+<div class="dot" id="dot-R"></div>
+<div id="status"></div>
+
+<div id="startScreen">
+  <h1>척 · 츄</h1>
+  <p>EYE BLINK DETECTOR</p>
+  <div class="hints">
+    <div class="hint left-h">
+      <span style="font-size:28px">👁️</span>
+      <span class="label">LEFT EYE</span>
+      <span class="kw">척</span>
+    </div>
+    <div class="hint right-h">
+      <span style="font-size:28px">👁️</span>
+      <span class="label">RIGHT EYE</span>
+      <span class="kw">츄</span>
+    </div>
+  </div>
+  <div id="loadWrap">
+    <div id="loadBar"><div id="loadFill"></div></div>
+    <div id="loadMsg">LOADING...</div>
+  </div>
+  <button id="startBtn" onclick="startApp()">START →</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection@1.0.5/dist/face-landmarks-detection.min.js"></script>
+
+<script>
+const video    = document.getElementById('video');
+const flash    = document.getElementById('flash');
+const dotL     = document.getElementById('dot-L');
+const dotR     = document.getElementById('dot-R');
+const statusEl = document.getElementById('status');
+const wCheok   = document.getElementById('word-cheok');
+const wChyu    = document.getElementById('word-chyu');
+const loadWrap = document.getElementById('loadWrap');
+const loadFill = document.getElementById('loadFill');
+const loadMsg  = document.getElementById('loadMsg');
+
+// Face mesh landmark indices
+const L_TOP=[159,158,157,173], L_BOT=[145,153,144,163], L_IN=133, L_OUT=33;
+const R_TOP=[386,385,384,398], R_BOT=[374,380,373,390], R_IN=362, R_OUT=263;
+
+const EAR_THRESH = 0.20;
+const MIN_FRAMES = 2;
+let lClosed=0, rClosed=0, lWasOpen=true, rWasOpen=true;
+let detector=null, running=false;
+
+function getKP(kp, idx) {
+  // kp is array of {x,y,z,name?}
+  return kp[idx];
+}
+
+function ear(kp, top, bot, inn, out) {
+  const avgY = idxs => idxs.reduce((s,i)=>s+kp[i].y,0)/idxs.length;
+  const avgX = idxs => idxs.reduce((s,i)=>s+kp[i].x,0)/idxs.length;
+  const vDist = Math.abs(avgY(top) - avgY(bot));
+  const dx = kp[inn].x - kp[out].x;
+  const dy = kp[inn].y - kp[out].y;
+  const hDist = Math.sqrt(dx*dx+dy*dy);
+  return vDist / (hDist + 1e-6);
+}
+
+function triggerWord(el, color) {
+  el.classList.remove('pop');
+  void el.offsetWidth;
+  el.classList.add('pop');
+  flash.style.background = color;
+  flash.style.opacity = '0.18';
+  setTimeout(()=>{ flash.style.opacity='0'; }, 100);
+}
+
+async function detect() {
+  if (!running) return;
+  try {
+    const faces = await detector.estimateFaces(video, {flipHorizontal:false});
+    if (faces.length > 0) {
+      statusEl.textContent = '👁  BLINK!';
+      const kp = faces[0].keypoints;
+
+      const lEAR = ear(kp, L_TOP, L_BOT, L_IN, L_OUT);
+      const rEAR = ear(kp, R_TOP, R_BOT, R_IN, R_OUT);
+
+      const lC = lEAR < EAR_THRESH;
+      const rC = rEAR < EAR_THRESH;
+
+      dotL.className = 'dot' + (lC ? ' closed' : '');
+      dotR.className = 'dot' + (rC ? ' closed' : '');
+
+      if (lC) lClosed++;
+      else {
+        if (lClosed >= MIN_FRAMES && lWasOpen) triggerWord(wCheok, '#00d4ff');
+        lClosed = 0;
+      }
+      lWasOpen = !lC;
+
+      if (rC) rClosed++;
+      else {
+        if (rClosed >= MIN_FRAMES && rWasOpen) triggerWord(wChyu, '#ff3d7f');
+        rClosed = 0;
+      }
+      rWasOpen = !rC;
+
+    } else {
+      statusEl.textContent = 'NO FACE DETECTED';
+      dotL.className='dot'; dotR.className='dot';
+    }
+  } catch(e) { console.error(e); }
+  requestAnimationFrame(detect);
+}
+
+async function startApp() {
+  document.getElementById('startBtn').style.display = 'none';
+  loadWrap.style.display = 'flex';
+
+  try {
+    loadMsg.textContent = 'CAMERA...';
+    loadFill.style.width = '15%';
+
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode:'user', width:{ideal:640}, height:{ideal:480} },
+      audio: false
+    });
+    video.srcObject = stream;
+    await new Promise(r => { video.onloadedmetadata = r; });
+    video.play();
+
+    loadMsg.textContent = 'LOADING AI MODEL...';
+    loadFill.style.width = '40%';
+
+    await tf.setBackend('webgl');
+    await tf.ready();
+    loadFill.style.width = '65%';
+
+    loadMsg.textContent = 'BUILDING DETECTOR...';
+    detector = await faceLandmarksDetection.createDetector(
+      faceLandmarksDetection.SupportedModels.MediaPipeFaceMesh,
+      { runtime:'tfjs', refineLandmarks:true, maxFaces:1 }
+    );
+
+    loadFill.style.width = '100%';
+    loadMsg.textContent = '✓ READY';
+
+    setTimeout(() => {
+      document.getElementById('startScreen').style.display = 'none';
+      statusEl.textContent = 'DETECTING...';
+      running = true;
+      detect();
+    }, 500);
+
+  } catch(e) {
+    loadMsg.textContent = 'ERROR: ' + e.message;
+    console.error(e);
+  }
+}
+</script>
+
+</body>
+</html>
