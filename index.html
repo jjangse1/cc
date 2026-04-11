@@ -25,25 +25,31 @@
   #dL{left:24px;background:#00d4ff;box-shadow:0 0 14px #00d4ff}
   #dR{right:24px;background:#ff3d7f;box-shadow:0 0 14px #ff3d7f}
   .dot.on{opacity:1;transform:scale(2.2)}
-  #status{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.3);font-size:11px;letter-spacing:3px;font-family:monospace;z-index:100;white-space:nowrap}
-  #ss{position:fixed;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;z-index:200}
-  #ss h1{font-size:clamp(72px,22vw,130px);background:linear-gradient(135deg,#00d4ff,#ff3d7f);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-  .sub{color:rgba(255,255,255,0.4);font-size:12px;letter-spacing:5px;font-family:monospace}
-  .hints{display:flex;gap:52px}
-  .hint{display:flex;flex-direction:column;align-items:center;gap:8px}
-  .hint .lbl{color:rgba(255,255,255,0.3);font-size:9px;letter-spacing:3px;font-family:monospace}
-  .hint .kw{font-size:24px}
-  .lh .kw{color:#00d4ff}.rh .kw{color:#ff3d7f}
-  #prog{width:240px;height:2px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden;display:none}
-  #pfill{height:100%;width:0%;background:linear-gradient(90deg,#00d4ff,#ff3d7f);transition:width .4s}
-  #pmsg{color:rgba(255,255,255,0.35);font-size:11px;letter-spacing:2px;font-family:monospace;display:none;text-align:center;max-width:300px;line-height:2}
-  #btn{margin-top:8px;padding:16px 50px;border:1.5px solid rgba(255,255,255,0.2);background:transparent;color:#fff;font-size:14px;letter-spacing:5px;font-family:monospace;cursor:pointer;border-radius:2px}
-  #btn:active{background:rgba(255,255,255,0.07)}
+  #status{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.35);font-size:11px;letter-spacing:3px;font-family:monospace;z-index:100;white-space:nowrap}
+
+#ss{position:fixed;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;z-index:200}
+#ss h1{font-size:clamp(72px,22vw,130px);background:linear-gradient(135deg,#00d4ff,#ff3d7f);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.sub{color:rgba(255,255,255,0.4);font-size:12px;letter-spacing:5px;font-family:monospace}
+.hints{display:flex;gap:52px}
+.hint{display:flex;flex-direction:column;align-items:center;gap:8px}
+.hint .lbl{color:rgba(255,255,255,0.3);font-size:9px;letter-spacing:3px;font-family:monospace}
+.hint .kw{font-size:24px}
+.lh .kw{color:#00d4ff}.rh .kw{color:#ff3d7f}
+#prog{width:260px;height:2px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden;display:none}
+#pfill{height:100%;width:0%;background:linear-gradient(90deg,#00d4ff,#ff3d7f);transition:width .4s}
+#pmsg{color:rgba(255,255,255,0.35);font-size:11px;letter-spacing:2px;font-family:monospace;display:none;text-align:center;max-width:300px;line-height:2.2}
+#btn{margin-top:8px;padding:16px 50px;border:1.5px solid rgba(255,255,255,0.2);background:transparent;color:#fff;font-size:14px;letter-spacing:5px;font-family:monospace;cursor:pointer;border-radius:2px}
+#btn:active{background:rgba(255,255,255,0.07)}
+
+/* debug canvas - hidden but used for processing */
+#dbg{display:none}
 </style>
+
 </head>
 <body>
 
 <video id="video" autoplay muted playsinline></video>
+<canvas id="dbg"></canvas>
 
 <div id="flash"></div>
 <div id="wL" class="word">척</div>
@@ -66,86 +72,162 @@
 
 <script>
 const video = document.getElementById('video');
+const dbg   = document.getElementById('dbg');
 const flash = document.getElementById('flash');
 const dL    = document.getElementById('dL');
 const dR    = document.getElementById('dR');
 const wL    = document.getElementById('wL');
 const wR    = document.getElementById('wR');
 const st    = document.getElementById('status');
-const prog  = document.getElementById('prog');
 const pfill = document.getElementById('pfill');
 const pmsg  = document.getElementById('pmsg');
+const ctx   = dbg.getContext('2d');
 
-function setP(pct, msg){ prog.style.display='block'; pmsg.style.display='block'; pfill.style.width=pct+'%'; pmsg.textContent=msg; }
-function pop(el,color){ el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); flash.style.background=color; flash.style.opacity='0.2'; setTimeout(()=>flash.style.opacity='0',120); }
-function loadScript(src){ return new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=src; s.onload=res; s.onerror=()=>rej(new Error('Load failed: '+src)); document.head.appendChild(s); }); }
+function setP(pct,msg){document.getElementById('prog').style.display='block';pmsg.style.display='block';pfill.style.width=pct+'%';pmsg.textContent=msg}
+function pop(el,color){el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop');flash.style.background=color;flash.style.opacity='0.2';setTimeout(()=>flash.style.opacity='0',120)}
+function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(new Error('❌ CDN 로드 실패:\n'+src));document.head.appendChild(s)})}
 
-// EAR — MediaPipe 468pt indices
-const L_IDX=[362,385,387,263,373,380];
-const R_IDX=[33,160,158,133,153,144];
-function dist(a,b){return Math.sqrt((a.x-b.x)**2+(a.y-b.y)**2)}
-function ear(kps,idx){const p=idx.map(i=>kps[i]);return(dist(p[1],p[5])+dist(p[2],p[4]))/(2*dist(p[0],p[3])+1e-6)}
+// ── BlazeFace landmarks ────────────────────────────────────
+// BlazeFace returns 6 keypoints:
+// 0=rightEye, 1=leftEye, 2=nose, 3=mouth, 4=rightEar, 5=leftEar
+// (from the model's perspective, so rightEye = user's LEFT eye)
 
-const EAR_TH=0.18, MIN_F=2;
-let lF=0,rF=0,lOpen=true,rOpen=true,detector=null,running=false;
+// We use the face bounding box + keypoint positions to crop
+// each eye region and measure brightness variance (open vs closed)
 
-async function loop(){
-  if(!running) return;
-  try{
-    const faces=await detector.estimateFaces(video,{flipHorizontal:false});
-    if(faces.length>0){
-      st.textContent='👁  BLINK!';
-      const kps=faces[0].keypoints;
-      const lC=ear(kps,L_IDX)<EAR_TH;
-      const rC=ear(kps,R_IDX)<EAR_TH;
-      dL.className='dot'+(lC?' on':'');
-      dR.className='dot'+(rC?' on':'');
-      if(lC)lF++; else{if(lF>=MIN_F&&lOpen)pop(wL,'#00d4ff');lF=0;} lOpen=!lC;
-      if(rC)rF++; else{if(rF>=MIN_F&&rOpen)pop(wR,'#ff3d7f');rF=0;} rOpen=!rC;
-    }else{
-      st.textContent='NO FACE — 얼굴을 가운데로';
-      dL.className='dot'; dR.className='dot';
+let model = null;
+let running = false;
+
+// Rolling brightness history per eye for adaptive thresholding
+const HIST = 12;
+let lHist = [], rHist = [];
+let lF=0, rF=0, lOpen=true, rOpen=true;
+const MIN_F = 2;
+
+// Measure "openness" of eye region by sampling pixel brightness
+// More variance/brightness = open; uniform dark = closed
+function eyeOpenness(x, y, w, h) {
+  // x,y,w,h in video pixel space
+  const sw = Math.max(1, Math.round(w));
+  const sh = Math.max(1, Math.round(h));
+  const sx = Math.round(x);
+  const sy = Math.round(y);
+
+  try {
+    const data = ctx.getImageData(sx, sy, sw, sh).data;
+    let bright = 0;
+    const n = data.length / 4;
+    for (let i = 0; i < data.length; i += 4) {
+      bright += 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2];
     }
-  }catch(e){console.warn(e)}
-  setTimeout(loop,80);
+    return bright / n; // avg brightness 0-255
+  } catch(e) {
+    return 128;
+  }
 }
 
-async function go(){
-  document.getElementById('btn').style.display='none';
-  setP(5,'CAMERA...');
-  try{
-    // 카메라
-    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:640},height:{ideal:480}},audio:false});
-    video.srcObject=stream;
-    await new Promise(r=>{ video.onloadedmetadata=r; });
-    video.play();
-    setP(20,'TensorFlow.js 로딩 중...');
+async function loop() {
+  if (!running) return;
+  try {
+    const preds = await model.estimateFaces(video, false);
 
-    // TF.js 통합 번들 (tf-core + webgl + converter 포함)
+    if (preds.length > 0) {
+      st.textContent = '👁  BLINK!';
+      const face = preds[0];
+
+      // Draw video frame to canvas for pixel sampling
+      dbg.width  = video.videoWidth;
+      dbg.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0);
+
+      // BlazeFace keypoints: [x, y]
+      // kp[0] = right eye (= user's LEFT eye, since video is mirrored by CSS only)
+      // kp[1] = left eye  (= user's RIGHT eye)
+      const kp = face.landmarks; // array of [x,y]
+
+      const box = face.topLeft; // [x, y]
+      const boxEnd = face.bottomRight;
+      const faceW = boxEnd[0] - box[0];
+      const faceH = boxEnd[1] - box[1];
+
+      // Eye region size relative to face
+      const ew = faceW * 0.22;
+      const eh = faceH * 0.18;
+
+      // kp[0] = right model eye = user LEFT (mirrored display)
+      // kp[1] = left model eye  = user RIGHT
+      const lKP = kp[0]; // user's left eye
+      const rKP = kp[1]; // user's right eye
+
+      const lBright = eyeOpenness(lKP[0] - ew/2, lKP[1] - eh/2, ew, eh);
+      const rBright = eyeOpenness(rKP[0] - ew/2, rKP[1] - eh/2, ew, eh);
+
+      // Adaptive threshold: use rolling average
+      lHist.push(lBright); if(lHist.length > HIST) lHist.shift();
+      rHist.push(rBright); if(rHist.length > HIST) rHist.shift();
+
+      const lAvg = lHist.reduce((a,b)=>a+b,0)/lHist.length;
+      const rAvg = rHist.reduce((a,b)=>a+b,0)/rHist.length;
+
+      // Closed = brightness drops significantly below running average
+      const lC = lBright < lAvg * 0.72;
+      const rC = rBright < rAvg * 0.72;
+
+      dL.className = 'dot' + (lC ? ' on' : '');
+      dR.className = 'dot' + (rC ? ' on' : '');
+
+      if(lC) lF++; else { if(lF >= MIN_F && lOpen) pop(wL,'#00d4ff'); lF=0; } lOpen=!lC;
+      if(rC) rF++; else { if(rF >= MIN_F && rOpen) pop(wR,'#ff3d7f'); rF=0; } rOpen=!rC;
+
+    } else {
+      st.textContent = 'NO FACE — 조금 멀리!';
+      dL.className='dot'; dR.className='dot';
+    }
+  } catch(e) { console.warn(e); }
+
+  setTimeout(loop, 80); // 12fps
+}
+
+async function go() {
+  document.getElementById('btn').style.display = 'none';
+  setP(5, '카메라 초기화...');
+
+  try {
+    // Camera
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode:'user', width:{ideal:640}, height:{ideal:480} },
+      audio: false
+    });
+    video.srcObject = stream;
+    await new Promise(r => { video.onloadedmetadata = r; });
+    video.play();
+    setP(20, 'TensorFlow.js 로딩 중...\n(20-30초 소요)');
+
+    // Load full TF.js bundle first
     await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js');
     await tf.setBackend('webgl');
     await tf.ready();
-    setP(55,'Face Model 로딩 중...');
+    setP(60, 'BlazeFace 로딩 중...');
 
-    // face-landmarks-detection
-    await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection@1.0.5/dist/face-landmarks-detection.min.js');
-    setP(75,'Detector 생성 중...');
+    // BlazeFace - tiny model, works great on mobile
+    await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/blazeface@0.0.7/dist/blazeface.min.js');
+    setP(80, '모델 초기화 중...');
 
-    detector=await faceLandmarksDetection.createDetector(
-      faceLandmarksDetection.SupportedModels.MediaPipeFaceMesh,
-      { runtime:'tfjs', refineLandmarks:false, maxFaces:1 }
-    );
+    model = await blazeface.load();
+    setP(100, '✓ 준비 완료!');
 
-    setP(100,'✓ 준비 완료!');
-    await new Promise(r=>setTimeout(r,400));
-    document.getElementById('ss').style.display='none';
-    st.textContent='DETECTING...';
-    running=true;
+    await new Promise(r => setTimeout(r, 400));
+    document.getElementById('ss').style.display = 'none';
+    st.textContent = 'DETECTING...';
+    running = true;
+
+    // Warm up
+    await model.estimateFaces(video, false);
     loop();
 
-  }catch(e){
-    setP(0,'❌ '+e.message);
-    document.getElementById('btn').style.display='block';
+  } catch(e) {
+    setP(0, e.message);
+    document.getElementById('btn').style.display = 'block';
     console.error(e);
   }
 }
