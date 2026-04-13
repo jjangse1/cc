@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -9,229 +8,287 @@
   @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap');
   *{margin:0;padding:0;box-sizing:border-box}
   body{background:#000;width:100vw;height:100dvh;overflow:hidden;font-family:'Black Han Sans',sans-serif}
-  #video{position:fixed;top:0;left:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);opacity:0.9}
-  .word{position:fixed;left:50%;top:45%;transform:translate(-50%,-50%) scale(0.3);font-size:clamp(130px,35vw,300px);opacity:0;pointer-events:none;z-index:50;text-shadow:0 0 60px currentColor,6px 6px 0 rgba(0,0,0,0.9)}
-  .word.pop{animation:popAnim 1s cubic-bezier(0.175,0.885,0.32,1.275) forwards}
-  #wL{color:#00d4ff}#wR{color:#ff3d7f}
-  @keyframes popAnim{
-    0%  {opacity:0;transform:translate(-50%,-50%) scale(0.2) rotate(-10deg);filter:blur(12px)}
-    45% {opacity:1;transform:translate(-50%,-50%) scale(1.2) rotate(3deg);filter:blur(0)}
-    65% {transform:translate(-50%,-50%) scale(0.92) rotate(-1deg)}
-    80% {opacity:1;transform:translate(-50%,-50%) scale(1.0)}
-    100%{opacity:0;transform:translate(-50%,-50%) scale(1.5) rotate(6deg);filter:blur(10px)}
+
+  #video{
+    position:fixed;top:0;left:0;width:100%;height:100%;
+    object-fit:cover;transform:scaleX(-1);opacity:0.85;
   }
-  #flash{position:fixed;inset:0;opacity:0;pointer-events:none;z-index:40;mix-blend-mode:screen}
-  .dot{position:fixed;width:18px;height:18px;border-radius:50%;top:24px;z-index:100;opacity:0.3;transition:opacity .1s,transform .15s}
-  #dL{left:24px;background:#00d4ff;box-shadow:0 0 14px #00d4ff}
-  #dR{right:24px;background:#ff3d7f;box-shadow:0 0 14px #ff3d7f}
-  .dot.on{opacity:1;transform:scale(2.2)}
-  #status{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.35);font-size:11px;letter-spacing:3px;font-family:monospace;z-index:100;white-space:nowrap}
+  #canvas{
+    position:fixed;top:0;left:0;width:100%;height:100%;
+    transform:scaleX(-1);pointer-events:none;z-index:10;
+  }
 
-#ss{position:fixed;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;z-index:200}
-#ss h1{font-size:clamp(72px,22vw,130px);background:linear-gradient(135deg,#00d4ff,#ff3d7f);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.sub{color:rgba(255,255,255,0.4);font-size:12px;letter-spacing:5px;font-family:monospace}
-.hints{display:flex;gap:52px}
-.hint{display:flex;flex-direction:column;align-items:center;gap:8px}
-.hint .lbl{color:rgba(255,255,255,0.3);font-size:9px;letter-spacing:3px;font-family:monospace}
-.hint .kw{font-size:24px}
-.lh .kw{color:#00d4ff}.rh .kw{color:#ff3d7f}
-#prog{width:260px;height:2px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden;display:none}
-#pfill{height:100%;width:0%;background:linear-gradient(90deg,#00d4ff,#ff3d7f);transition:width .4s}
-#pmsg{color:rgba(255,255,255,0.35);font-size:11px;letter-spacing:2px;font-family:monospace;display:none;text-align:center;max-width:300px;line-height:2.2}
-#btn{margin-top:8px;padding:16px 50px;border:1.5px solid rgba(255,255,255,0.2);background:transparent;color:#fff;font-size:14px;letter-spacing:5px;font-family:monospace;cursor:pointer;border-radius:2px}
-#btn:active{background:rgba(255,255,255,0.07)}
+  .word{
+    position:fixed;left:50%;top:42%;
+    transform:translate(-50%,-50%) scale(0.3);
+    font-size:clamp(140px,38vw,320px);
+    opacity:0;pointer-events:none;z-index:50;
+    text-shadow:0 0 80px currentColor,8px 8px 0 rgba(0,0,0,0.9);
+  }
+  .word.pop{animation:popAnim 1.1s cubic-bezier(0.175,0.885,0.32,1.275) forwards}
+  #wFist{color:#ff3d7f}   /* 척 - 주먹 */
+  #wOpen{color:#00d4ff}   /* 츄 - 손펴기 */
 
-/* debug canvas - hidden but used for processing */
-#dbg{display:none}
+  @keyframes popAnim{
+    0%  {opacity:0;transform:translate(-50%,-50%) scale(0.15) rotate(-12deg);filter:blur(16px)}
+    40% {opacity:1;transform:translate(-50%,-50%) scale(1.25) rotate(4deg);filter:blur(0)}
+    60% {transform:translate(-50%,-50%) scale(0.9) rotate(-2deg)}
+    78% {opacity:1;transform:translate(-50%,-50%) scale(1.05)}
+    100%{opacity:0;transform:translate(-50%,-50%) scale(1.6) rotate(8deg);filter:blur(12px)}
+  }
+
+  #flash{position:fixed;inset:0;opacity:0;pointer-events:none;z-index:40;mix-blend-mode:screen;transition:opacity 0.05s}
+
+  /* gesture indicator */
+  #gesture{
+    position:fixed;bottom:36px;left:50%;transform:translateX(-50%);
+    font-family:monospace;font-size:12px;letter-spacing:3px;
+    color:rgba(255,255,255,0.35);z-index:100;white-space:nowrap;
+    transition:color 0.2s;
+  }
+  #gesture.fist{color:#ff3d7f}
+  #gesture.open{color:#00d4ff}
+
+  /* start screen */
+  #ss{
+    position:fixed;inset:0;background:#000;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:22px;z-index:200;
+  }
+  #ss h1{
+    font-size:clamp(72px,22vw,140px);
+    background:linear-gradient(135deg,#ff3d7f,#00d4ff);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  }
+  .sub{color:rgba(255,255,255,0.4);font-size:12px;letter-spacing:5px;font-family:monospace}
+  .hints{display:flex;gap:56px}
+  .hint{display:flex;flex-direction:column;align-items:center;gap:10px}
+  .hint .ico{font-size:36px}
+  .hint .lbl{color:rgba(255,255,255,0.3);font-size:9px;letter-spacing:3px;font-family:monospace}
+  .hint .kw{font-size:26px}
+  .fh .kw{color:#ff3d7f}
+  .oh .kw{color:#00d4ff}
+
+  #prog{width:260px;height:2px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden;display:none}
+  #pfill{height:100%;width:0%;background:linear-gradient(90deg,#ff3d7f,#00d4ff);transition:width .4s}
+  #pmsg{color:rgba(255,255,255,0.35);font-size:11px;letter-spacing:2px;font-family:monospace;display:none;text-align:center;max-width:320px;line-height:2.2}
+
+  #btn{
+    margin-top:8px;padding:16px 54px;
+    border:1.5px solid rgba(255,255,255,0.2);background:transparent;
+    color:#fff;font-size:14px;letter-spacing:5px;font-family:monospace;
+    cursor:pointer;border-radius:2px;
+  }
+  #btn:hover{background:rgba(255,255,255,0.06)}
 </style>
-
 </head>
 <body>
 
 <video id="video" autoplay muted playsinline></video>
-<canvas id="dbg"></canvas>
-
+<canvas id="canvas"></canvas>
 <div id="flash"></div>
-<div id="wL" class="word">척</div>
-<div id="wR" class="word">츄</div>
-<div class="dot" id="dL"></div>
-<div class="dot" id="dR"></div>
-<div id="status"></div>
+<div id="wFist" class="word">척</div>
+<div id="wOpen" class="word">츄</div>
+<div id="gesture">READY</div>
 
 <div id="ss">
   <h1>척 · 츄</h1>
-  <div class="sub">EYE BLINK DETECTOR</div>
+  <div class="sub">HAND GESTURE DETECTOR</div>
   <div class="hints">
-    <div class="hint lh"><span style="font-size:30px">👁️</span><span class="lbl">LEFT</span><span class="kw">척</span></div>
-    <div class="hint rh"><span style="font-size:30px">👁️</span><span class="lbl">RIGHT</span><span class="kw">츄</span></div>
+    <div class="hint fh">
+      <span class="ico">✊</span>
+      <span class="lbl">FIST</span>
+      <span class="kw">척</span>
+    </div>
+    <div class="hint oh">
+      <span class="ico">🖐️</span>
+      <span class="lbl">OPEN</span>
+      <span class="kw">츄</span>
+    </div>
   </div>
   <div id="prog"><div id="pfill"></div></div>
   <div id="pmsg"></div>
   <button id="btn" onclick="go()">START →</button>
 </div>
 
+<!-- MediaPipe Hands — official Google CDN (stable, no model file issues) -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/hands.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1640029074/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3.1620248257/drawing_utils.js" crossorigin="anonymous"></script>
+
 <script>
-const video = document.getElementById('video');
-const dbg   = document.getElementById('dbg');
-const flash = document.getElementById('flash');
-const dL    = document.getElementById('dL');
-const dR    = document.getElementById('dR');
-const wL    = document.getElementById('wL');
-const wR    = document.getElementById('wR');
-const st    = document.getElementById('status');
-const pfill = document.getElementById('pfill');
-const pmsg  = document.getElementById('pmsg');
-const ctx   = dbg.getContext('2d');
+const video   = document.getElementById('video');
+const canvas  = document.getElementById('canvas');
+const flash   = document.getElementById('flash');
+const wFist   = document.getElementById('wFist');
+const wOpen   = document.getElementById('wOpen');
+const gestEl  = document.getElementById('gesture');
+const pfill   = document.getElementById('pfill');
+const pmsg    = document.getElementById('pmsg');
+const ctx     = canvas.getContext('2d');
 
-function setP(pct,msg){document.getElementById('prog').style.display='block';pmsg.style.display='block';pfill.style.width=pct+'%';pmsg.textContent=msg}
-function pop(el,color){el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop');flash.style.background=color;flash.style.opacity='0.2';setTimeout(()=>flash.style.opacity='0',120)}
-function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(new Error('❌ CDN 로드 실패:\n'+src));document.head.appendChild(s)})}
+function setP(pct, msg){
+  document.getElementById('prog').style.display='block';
+  pmsg.style.display='block';
+  pfill.style.width=pct+'%';
+  pmsg.textContent=msg;
+}
 
-// ── BlazeFace landmarks ────────────────────────────────────
-// BlazeFace returns 6 keypoints:
-// 0=rightEye, 1=leftEye, 2=nose, 3=mouth, 4=rightEar, 5=leftEar
-// (from the model's perspective, so rightEye = user's LEFT eye)
+function pop(el, color){
+  el.classList.remove('pop');
+  void el.offsetWidth;
+  el.classList.add('pop');
+  flash.style.background = color;
+  flash.style.opacity = '0.25';
+  setTimeout(()=>flash.style.opacity='0', 130);
+}
 
-// We use the face bounding box + keypoint positions to crop
-// each eye region and measure brightness variance (open vs closed)
+// ── Gesture classification ────────────────────────────────
+// MediaPipe Hands 21 landmarks
+// Finger tip indices: thumb=4, index=8, middle=12, ring=16, pinky=20
+// Finger pip indices: thumb=3, index=6, middle=10, ring=14, pinky=18
+// Finger mcp indices: index=5, middle=9, ring=13, pinky=17
 
-let model = null;
-let running = false;
+const TIPS = [4, 8, 12, 16, 20];
+const PIPS = [3, 6, 10, 14, 18];
+const MCPS = [1, 5, 9, 13, 17];
 
-// Rolling brightness history per eye for adaptive thresholding
-const HIST = 12;
-let lHist = [], rHist = [];
-let lF=0, rF=0, lOpen=true, rOpen=true;
-const MIN_F = 2;
+function isFingerOpen(lm, tip, pip) {
+  // Finger is open if tip is further from wrist than pip
+  const wrist = lm[0];
+  const tipDist  = Math.hypot(lm[tip].x - wrist.x, lm[tip].y - wrist.y);
+  const pipDist  = Math.hypot(lm[pip].x - wrist.x, lm[pip].y - wrist.y);
+  return tipDist > pipDist * 1.1;
+}
 
-// Measure "openness" of eye region by sampling pixel brightness
-// More variance/brightness = open; uniform dark = closed
-function eyeOpenness(x, y, w, h) {
-  // x,y,w,h in video pixel space
-  const sw = Math.max(1, Math.round(w));
-  const sh = Math.max(1, Math.round(h));
-  const sx = Math.round(x);
-  const sy = Math.round(y);
+function classifyHand(landmarks) {
+  // Count open fingers (skip thumb for simplicity)
+  let openCount = 0;
+  for (let i = 1; i <= 4; i++) {
+    if (isFingerOpen(landmarks, TIPS[i], PIPS[i])) openCount++;
+  }
+  // Thumb: check if tip is far from index MCP
+  const thumbOpen = Math.hypot(
+    landmarks[4].x - landmarks[5].x,
+    landmarks[4].y - landmarks[5].y
+  ) > Math.hypot(
+    landmarks[3].x - landmarks[5].x,
+    landmarks[3].y - landmarks[5].y
+  );
+  if (thumbOpen) openCount++;
 
-  try {
-    const data = ctx.getImageData(sx, sy, sw, sh).data;
-    let bright = 0;
-    const n = data.length / 4;
-    for (let i = 0; i < data.length; i += 4) {
-      bright += 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2];
+  if (openCount >= 4) return 'open';   // 손펴기 → 츄
+  if (openCount <= 1) return 'fist';   // 주먹   → 척
+  return 'mid';
+}
+
+// State machine — trigger on TRANSITION
+let prevGesture = 'mid';
+let stableCount = 0;
+const STABLE_TH = 3; // frames to confirm gesture
+
+function onGesture(g) {
+  if (g === prevGesture) {
+    stableCount++;
+    if (stableCount === STABLE_TH) {
+      // Confirmed new gesture
+      if (g === 'fist') {
+        pop(wFist, '#ff3d7f');
+        gestEl.textContent = '✊  척!';
+        gestEl.className = 'fist';
+      } else if (g === 'open') {
+        pop(wOpen, '#00d4ff');
+        gestEl.textContent = '🖐  츄!';
+        gestEl.className = 'open';
+      } else {
+        gestEl.textContent = '...';
+        gestEl.className = '';
+      }
     }
-    return bright / n; // avg brightness 0-255
-  } catch(e) {
-    return 128;
+  } else {
+    prevGesture = g;
+    stableCount = 0;
   }
 }
 
-async function loop() {
-  if (!running) return;
-  try {
-    const preds = await model.estimateFaces(video, false);
+// ── MediaPipe setup ───────────────────────────────────────
+let handsModel = null;
 
-    if (preds.length > 0) {
-      st.textContent = '👁  BLINK!';
-      const face = preds[0];
+function onResults(results) {
+  // Resize canvas
+  canvas.width  = video.videoWidth  || canvas.offsetWidth;
+  canvas.height = video.videoHeight || canvas.offsetHeight;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Draw video frame to canvas for pixel sampling
-      dbg.width  = video.videoWidth;
-      dbg.height = video.videoHeight;
-      ctx.drawImage(video, 0, 0);
+  if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+    const landmarks = results.multiHandLandmarks[0];
 
-      // BlazeFace keypoints: [x, y]
-      // kp[0] = right eye (= user's LEFT eye, since video is mirrored by CSS only)
-      // kp[1] = left eye  (= user's RIGHT eye)
-      const kp = face.landmarks; // array of [x,y]
+    // Draw hand skeleton
+    drawConnectors(ctx, landmarks, HAND_CONNECTIONS, {color:'rgba(255,255,255,0.25)', lineWidth:2});
+    drawLandmarks(ctx, landmarks, {color:'rgba(255,255,255,0.6)', lineWidth:1, radius:3});
 
-      const box = face.topLeft; // [x, y]
-      const boxEnd = face.bottomRight;
-      const faceW = boxEnd[0] - box[0];
-      const faceH = boxEnd[1] - box[1];
-
-      // Eye region size relative to face
-      const ew = faceW * 0.22;
-      const eh = faceH * 0.18;
-
-      // kp[0] = right model eye = user LEFT (mirrored display)
-      // kp[1] = left model eye  = user RIGHT
-      const lKP = kp[0]; // user's left eye
-      const rKP = kp[1]; // user's right eye
-
-      const lBright = eyeOpenness(lKP[0] - ew/2, lKP[1] - eh/2, ew, eh);
-      const rBright = eyeOpenness(rKP[0] - ew/2, rKP[1] - eh/2, ew, eh);
-
-      // Adaptive threshold: use rolling average
-      lHist.push(lBright); if(lHist.length > HIST) lHist.shift();
-      rHist.push(rBright); if(rHist.length > HIST) rHist.shift();
-
-      const lAvg = lHist.reduce((a,b)=>a+b,0)/lHist.length;
-      const rAvg = rHist.reduce((a,b)=>a+b,0)/rHist.length;
-
-      // Closed = brightness drops significantly below running average
-      const lC = lBright < lAvg * 0.72;
-      const rC = rBright < rAvg * 0.72;
-
-      dL.className = 'dot' + (lC ? ' on' : '');
-      dR.className = 'dot' + (rC ? ' on' : '');
-
-      if(lC) lF++; else { if(lF >= MIN_F && lOpen) pop(wL,'#00d4ff'); lF=0; } lOpen=!lC;
-      if(rC) rF++; else { if(rF >= MIN_F && rOpen) pop(wR,'#ff3d7f'); rF=0; } rOpen=!rC;
-
-    } else {
-      st.textContent = 'NO FACE — 조금 멀리!';
-      dL.className='dot'; dR.className='dot';
-    }
-  } catch(e) { console.warn(e); }
-
-  setTimeout(loop, 80); // 12fps
+    const g = classifyHand(landmarks);
+    onGesture(g);
+  } else {
+    gestEl.textContent = 'NO HAND — 손을 화면에';
+    gestEl.className = '';
+    stableCount = 0;
+  }
 }
 
 async function go() {
   document.getElementById('btn').style.display = 'none';
-  setP(5, '카메라 초기화...');
+  setP(10, '카메라 초기화...');
 
   try {
-    // Camera
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode:'user', width:{ideal:640}, height:{ideal:480} },
+      video: { facingMode:'user', width:{ideal:1280}, height:{ideal:720} },
       audio: false
     });
     video.srcObject = stream;
     await new Promise(r => { video.onloadedmetadata = r; });
     video.play();
-    setP(20, 'TensorFlow.js 로딩 중...\n(20-30초 소요)');
 
-    // Load full TF.js bundle first
-    await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js');
-    await tf.setBackend('webgl');
-    await tf.ready();
-    setP(60, 'BlazeFace 로딩 중...');
+    setP(40, 'MediaPipe Hands 로딩 중...\n(첫 로딩 10~20초)');
 
-    // BlazeFace - tiny model, works great on mobile
-    await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/blazeface@0.0.7/dist/blazeface.min.js');
-    setP(80, '모델 초기화 중...');
+    handsModel = new Hands({
+      locateFile: file =>
+        `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/${file}`
+    });
 
-    model = await blazeface.load();
+    handsModel.setOptions({
+      maxNumHands: 1,
+      modelComplexity: 1,
+      minDetectionConfidence: 0.6,
+      minTrackingConfidence: 0.5,
+    });
+
+    handsModel.onResults(onResults);
+
+    setP(70, '모델 초기화 중...');
+
+    // Use Camera utility for proper frame feeding
+    const camera = new Camera(video, {
+      onFrame: async () => {
+        await handsModel.send({ image: video });
+      },
+      width: 1280,
+      height: 720,
+    });
+
+    await camera.start();
+
     setP(100, '✓ 준비 완료!');
-
     await new Promise(r => setTimeout(r, 400));
     document.getElementById('ss').style.display = 'none';
-    st.textContent = 'DETECTING...';
-    running = true;
-
-    // Warm up
-    await model.estimateFaces(video, false);
-    loop();
+    gestEl.textContent = '손을 화면에 보여주세요';
 
   } catch(e) {
-    setP(0, e.message);
+    setP(0, '❌ ' + e.message);
     document.getElementById('btn').style.display = 'block';
     console.error(e);
   }
 }
 </script>
-
 </body>
 </html>
